@@ -1,0 +1,42 @@
+header {
+  height: fit-content;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  padding: 20px 0;
+}
+
+.head-left {
+  color: white;
+  font-size: 1.7rem;
+  font-weight: bold;
+}
+
+.head-right {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn-group {
+  background-color: #4a4c53;
+  padding: 0.3rem;
+  border-radius: 8px;
+}
+
+.btn-group button {
+  border-radius: 8px;
+  color: white;
+  padding: 0.7rem 2rem;
+  border: none;
+  font-size: 1rem;
+}
+
+#pre-btn {
+  background-color: transparent;
+}
+
+#gen-btn {
+  background-color: #232529;
+}
