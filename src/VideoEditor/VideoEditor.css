@@ -12,6 +12,17 @@
   height: 100%;
 }
 
+.video-container {
+  max-width: 90%;
+  aspect-ratio: 16/9;
+  background-color: black;
+}
+
+.video {
+  width: 100%;
+  height: 100%;
+}
+
 .main-right {
   display: flex;
   flex-direction: column;
@@ -47,4 +58,94 @@
   font-size: 3rem;
   padding: 1rem;
   color: white;
+}
+
+.video-controls-top {
+  padding: 20px 0;
+  width: 90%;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+#play-pause-btn {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+}
+
+.play-pause-icons {
+  color: aliceblue;
+  font-size: 2rem;
+}
+
+#seek {
+  flex-grow: 1;
+  height: 6px;
+}
+
+.grey {
+  color: #a3a3a3;
+  margin-right: 0.5rem;
+}
+
+#divider {
+  font-size: 1.3rem;
+}
+
+.time-display{
+  display: flex;
+  align-items: center;
+}
+
+.curr-time {
+  width: 4rem;
+}
+
+.video-controls-middle {
+  width: 90%;
+  display: flex;
+  justify-content: space-between;
+}
+
+.audio {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+#audio-icon {
+  font-size: 1.5rem;
+}
+
+#audio-inp {
+  width: 4rem;
+  height: 6px;
+}
+
+.speed-control {
+  display: flex;
+  align-items: center;
+  margin-left: 10px;
+}
+
+.speed-control label {
+  margin-right: 5px;
+  color: white; /* Adjust this based on your theme */
+}
+
+.speed-control select {
+  padding: 5px;
+  border-radius: 5px;
+  background-color: #333; /* Dark background color */
+  color: white; /* White text color */
+  border: 1px solid #444; /* Border color */
+  appearance: none; /* Remove default styling */
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.speed-control select option {
+  background-color: #333; /* Dark background color for options */
+  color: white; /* White text color for options */
 }
