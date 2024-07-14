@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./VideoEditor.css";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { FaYoutube } from "react-icons/fa6";
 
 const ffmpeg = new FFmpeg();
 
@@ -63,7 +64,18 @@ const VideoEditor = () => {
           </div>
         )}
       </section>
-      <section className="main-right"></section>
+      <section className="main-right">
+        <div id="pre-head">Preview</div>
+        <div id="pre-body">
+          <FaYoutube id="vid-icon"/>
+          <p id="pre-message">Preview not available</p>
+          <p>
+            Please click on "Start Cropper"
+            <br />
+            and then play video
+          </p>
+        </div>
+      </section>
     </main>
   );
 };
