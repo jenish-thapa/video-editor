@@ -1,38 +1,35 @@
-import React, { useState, useEffect, useRef } from "react";
-import "./VideoEditor.css";
+import React, { useState, useRef } from "react";
 import ReactPlayer from "react-player";
-import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { FaYoutube, FaPlay, FaPause } from "react-icons/fa6";
+import Draggable from "react-draggable";
+import { FaPlay, FaPause } from "react-icons/fa";
 import { HiSpeakerWave } from "react-icons/hi2";
-
-const ffmpeg = new FFmpeg();
+import "./VideoEditor.css";
 
 const VideoEditor = () => {
-  const [croppedVideo, setCroppedVideo] = useState(null);
-  const [isCropping, setIsCropping] = useState(false);
-  const [aspectRatio, setAspectRatio] = useState("9:16");
   const [video, setVideo] = useState(null);
-  const [videoFile, setVideoFile] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(0.8);
   const [seekTime, setSeekTime] = useState(0);
   const [seeking, setSeeking] = useState(false);
   const [duration, setDuration] = useState(0);
   const [speed, setSpeed] = useState(1.0);
+  const [aspectRatio, setAspectRatio] = useState("16:9");
+  const [width, setWidth] = useState(0);
   const videoRef = useRef();
 
-  useEffect(() => {
-    const loadFFmpeg = async () => {
-      await ffmpeg.load();
-    };
-    loadFFmpeg();
-  }, []);
+  const [videoHeight, setVideoHeight] = useState(0);
+
+  // Callback for when the video player is ready
+  const handlePlayerReady = (player) => {
+    // Accessing the player's client dimensions
+    const height = player.wrapper.clientHeight;
+    setVideoHeight(height);
+  };
 
   const handleVideoUpload = (e) => {
     const file = e.target.files[0];
     setVideo(URL.createObjectURL(file));
-    setVideoFile(file);
-    setPlaying(false); // Pause the video when a new one is uploaded
+    setPlaying(false);
   };
 
   const handlePlayPause = () => {
@@ -43,7 +40,7 @@ const VideoEditor = () => {
     setVolume(parseFloat(e.target.value));
   };
 
-  const handleSeekMouseDown = (e) => {
+  const handleSeekMouseDown = () => {
     setSeeking(true);
   };
 
@@ -66,6 +63,10 @@ const VideoEditor = () => {
     setDuration(duration);
   };
 
+  const handleSpeedChange = (e) => {
+    setSpeed(parseFloat(e.target.value));
+  };
+
   const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600)
       .toString()
@@ -79,29 +80,70 @@ const VideoEditor = () => {
     return `${hours}:${minutes}:${secs}`;
   };
 
-  const handleSpeedChange = (e) => {
-    setSpeed(parseFloat(e.target.value));
+  const handleAspectRatioChange = (e) => {
+    const ratio = e.target.value;
+    setAspectRatio(ratio);
+    const [w, h] = ratio.split(":").map(Number);
+    const height = videoHeight;
+    console.log(height);
+    const newWidth = (height * w) / h;
+    console.log(newWidth-6);
+    setWidth(newWidth-6);
   };
-
-  const cropVideo = async () => {};
 
   return (
     <main className="container">
       <section className="main-left">
         <div className="video-container">
           {video ? (
-            <ReactPlayer
-              ref={videoRef}
-              url={video}
-              playing={playing}
-              controls={false}
-              volume={volume}
-              width="100%"
-              height="100%"
-              playbackRate={speed}
-              onProgress={handleProgress}
-              onDuration={handleDuration}
-            />
+            <div style={{ position: "relative" }}>
+              <ReactPlayer
+                ref={videoRef}
+                url={video}
+                playing={playing}
+                controls={false}
+                volume={volume}
+                width="100%"
+                height="100%"
+                playbackRate={speed}
+                onProgress={handleProgress}
+                onDuration={handleDuration}
+                onReady={handlePlayerReady}
+              />
+              <Draggable
+                // nodeRef={videoRef}
+                bounds="parent"
+                defaultPosition={{ x: 0, y: 0 }}
+              >
+                <div
+                  style={{
+                    borderLeft: "2px solid white",
+                    borderRight: "2px solid white",
+                    background: "rgba(255, 255, 255, 0.1)",
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, 1fr)",
+                    gridTemplateRows: "repeat(3, 1fr)",
+                    width: width,
+                  }}
+                >
+                  {[...Array(9)].map((_, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        borderTop:
+                          i > 2
+                            ? "1px dotted rgba(255, 255, 255, 0.5)"
+                            : "none",
+                        borderLeft:
+                          i % 3 !== 0
+                            ? "1px dotted rgba(255, 255, 255, 0.5)"
+                            : "none",
+                      }}
+                    />
+                  ))}
+                </div>
+              </Draggable>
+            </div>
           ) : (
             <input type="file" onChange={handleVideoUpload} />
           )}
@@ -114,7 +156,6 @@ const VideoEditor = () => {
               <FaPlay className="play-pause-icons" />
             )}
           </button>
-
           <input
             type="range"
             min={0}
@@ -162,29 +203,24 @@ const VideoEditor = () => {
               <option value="2">2x</option>
             </select>
           </div>
-        </div>
-        <div className="video-controls">
           <div className="crop-controls">
+            <label htmlFor="aspect-ratio-select">Aspect Ratio: </label>
             <select
+              id="aspect-ratio-select"
               value={aspectRatio}
-              onChange={(e) => setAspectRatio(e.target.value)}
+              onChange={handleAspectRatioChange}
             >
-              <option value="9:16">Cropper Aspect Ratio 9:16</option>
-              <option value="16:9">Cropper Aspect Ratio 16:9</option>
+              <option value="16:9">16:9</option>
+              <option value="9:16">9:16</option>
+              <option value="4:3">4:3</option>
+              <option value="1:1">1:1</option>
             </select>
           </div>
         </div>
-        {croppedVideo && (
-          <div className="video-container">
-            <h2>Cropped Video</h2>
-            <video src={croppedVideo} controls className="video"></video>
-          </div>
-        )}
       </section>
       <section className="main-right">
         <div id="pre-head">Preview</div>
         <div id="pre-body">
-          <FaYoutube id="vid-icon" />
           <p id="pre-message">Preview not available</p>
           <p>
             Please click on "Start Cropper"

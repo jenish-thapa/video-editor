@@ -7,7 +7,8 @@
   color: white;
 }
 
-.main-left, .main-right {
+.main-left,
+.main-right {
   width: 50%;
   height: 100%;
 }
@@ -18,17 +19,11 @@
   background-color: black;
 }
 
-.video {
-  width: 100%;
-  height: 100%;
-}
-
 .main-right {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-
 }
 
 #pre-head {
@@ -93,7 +88,7 @@
   font-size: 1.3rem;
 }
 
-.time-display{
+.time-display {
   display: flex;
   align-items: center;
 }
@@ -123,29 +118,10 @@
   height: 6px;
 }
 
-.speed-control {
-  display: flex;
-  align-items: center;
-  margin-left: 10px;
-}
-
-.speed-control label {
-  margin-right: 5px;
-  color: white; /* Adjust this based on your theme */
-}
-
-.speed-control select {
-  padding: 5px;
-  border-radius: 5px;
-  background-color: #333; /* Dark background color */
-  color: white; /* White text color */
-  border: 1px solid #444; /* Border color */
-  appearance: none; /* Remove default styling */
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.speed-control select option {
-  background-color: #333; /* Dark background color for options */
-  color: white; /* White text color for options */
+.react-draggable {
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
 }
