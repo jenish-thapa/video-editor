@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactPlayer from "react-player";
 import Draggable from "react-draggable";
-import { FaPlay, FaPause } from "react-icons/fa";
+import { FaPlay, FaPause, FaYoutube } from "react-icons/fa";
 import { HiSpeakerWave } from "react-icons/hi2";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile, toBlobURL } from "@ffmpeg/util";
 import { Observable } from "rxjs";
+import { useSelector, useDispatch } from "react-redux";
+import { addRecordEvent } from "../../actions/videoEditorActions";
 import "./VideoEditor.css";
 
 const VideoEditor = () => {
@@ -13,15 +15,16 @@ const VideoEditor = () => {
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(0.8);
   const [seekTime, setSeekTime] = useState(0);
+  const [previewSeekTime, setPreviewSeekTime] = useState(0);
   const [seeking, setSeeking] = useState(false);
   const [duration, setDuration] = useState(0);
   const [speed, setSpeed] = useState(1.0);
-  const [aspectRatio, setAspectRatio] = useState("16:9");
+  const [aspectRatio, setAspectRatio] = useState("9:18");
   const videoRef = useRef();
 
-  const [cropperWidth, setCropperWidth] = useState(0);
+  const [cropperWidth, setCropperWidth] = useState((450 * 9) / 18);
   const [leftWidth, setLeftWidth] = useState(0);
-  const [rightWidth, setRightWidth] = useState(0);
+  const [rightWidth, setRightWidth] = useState(800 - cropperWidth);
   const [prePos, setPrePos] = useState(0);
 
   const [loaded, setLoaded] = useState(false);
@@ -36,6 +39,12 @@ const VideoEditor = () => {
     height: 450,
     width: 800,
   };
+
+  const isCropping = useSelector((state) => state.videoEditor.isCropping);
+  const recordedEvents = useSelector(
+    (state) => state.videoEditor.recordedEvents
+  );
+  const dispatch = useDispatch(); // Initialize dispatch
 
   useEffect(() => {
     const load = async () => {
@@ -62,12 +71,24 @@ const VideoEditor = () => {
     load();
   }, []);
 
-  // const handlePlayerReady = (player) => {
-  //   const height = player.wrapper.clientHeight;
-  //   setVideoHeight(height);
-  //   const newWidth = (height * 16) / 9;
-  //   setCropperWidth(newWidth - 6);
-  // };
+  const handlePlayerReady = () => {
+    const newWidth = (450 * 9) / 18;
+    setCropperWidth(newWidth - 6);
+    console.log(cropperWidth);
+    setLeftWidth(0);
+    setRightWidth(800 - cropperWidth);
+    console.log(rightWidth);
+  };
+
+  const recordEvent = () => {
+    const event = {
+      timeStamp: seekTime * duration,
+      coordinates: [cropPos.x, cropPos.y, cropperWidth, videoDimensions.height],
+      volume: volume,
+      playbackRate: speed,
+    };
+    dispatch(addRecordEvent(event)); // Dispatch the action
+  };
 
   const handleVideoUpload = (e) => {
     const file = e.target.files[0];
@@ -94,12 +115,14 @@ const VideoEditor = () => {
   const handleSeekMouseUp = () => {
     setSeeking(false);
     videoRef.current.seekTo(seekTime);
+    preVideoRef?.current?.seekTo(seekTime);
   };
 
   const handleProgress = (state) => {
     if (!seeking) {
       setSeekTime(state.played);
     }
+    if (preVideoRef.current) preVideoRef.current.seekTo(state.played);
   };
 
   const handleDuration = (duration) => {
@@ -130,8 +153,9 @@ const VideoEditor = () => {
     const height = videoDimensions.height;
     // console.log(height);
     const newWidth = (height * w) / h;
-    // console.log(newWidth - 6);
     setCropperWidth(newWidth - 6);
+    setLeftWidth(0);
+    setRightWidth(800 - (leftWidth + cropperWidth));
   };
   // const crop = async () => {
   //   const ffmpeg = ffmpegRef.current;
@@ -155,17 +179,15 @@ const VideoEditor = () => {
   //   );
   // };
 
-  const preview = () => {};
-
   const handleDrag = (e, ui) => {
     const { x, y } = cropPos;
     setCropPos({
       x: x + ui.deltaX,
       y: y + ui.deltaY,
     });
-    setLeftWidth(0.625 * x);
-    setRightWidth(500 - (leftWidth + 0.625 * cropperWidth));
-    setPrePos(250 - (500 - (leftWidth + rightWidth)) / 2 - leftWidth);
+    setLeftWidth(x);
+    setRightWidth(800 - (leftWidth + cropperWidth));
+    setPrePos(400 - (800 - (leftWidth + rightWidth)) / 2 - leftWidth);
     console.log(x, y);
   };
 
@@ -186,41 +208,46 @@ const VideoEditor = () => {
                 playbackRate={speed}
                 onProgress={handleProgress}
                 onDuration={handleDuration}
+                progressInterval={100}
+                // onReady={handlePlayerReady}
               />
-              <Draggable
-                // nodeRef={videoRef}
-                bounds="parent"
-                defaultPosition={{ x: 0, y: 0 }}
-                onDrag={handleDrag}
-              >
-                <div
-                  style={{
-                    borderLeft: "2px solid white",
-                    borderRight: "2px solid white",
-                    background: "rgba(255, 255, 255, 0.1)",
-                    display: "grid",
-                    gridTemplateColumns: "repeat(3, 1fr)",
-                    gridTemplateRows: "repeat(3, 1fr)",
-                    width: cropperWidth,
-                  }}
+              {isCropping && (
+                <Draggable
+                  // nodeRef={videoRef}
+                  bounds="parent"
+                  defaultPosition={{ x: 0, y: 0 }}
+                  onDrag={handleDrag}
+                  onStop={recordEvent}
                 >
-                  {[...Array(9)].map((_, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        borderTop:
-                          i > 2
-                            ? "1px dotted rgba(255, 255, 255, 0.5)"
-                            : "none",
-                        borderLeft:
-                          i % 3 !== 0
-                            ? "1px dotted rgba(255, 255, 255, 0.5)"
-                            : "none",
-                      }}
-                    />
-                  ))}
-                </div>
-              </Draggable>
+                  <div
+                    style={{
+                      borderLeft: "2px solid white",
+                      borderRight: "2px solid white",
+                      background: "rgba(255, 255, 255, 0.1)",
+                      display: "grid",
+                      gridTemplateColumns: "repeat(3, 1fr)",
+                      gridTemplateRows: "repeat(3, 1fr)",
+                      width: cropperWidth,
+                    }}
+                  >
+                    {[...Array(9)].map((_, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          borderTop:
+                            i > 2
+                              ? "1px dotted rgba(255, 255, 255, 0.5)"
+                              : "none",
+                          borderLeft:
+                            i % 3 !== 0
+                              ? "1px dotted rgba(255, 255, 255, 0.5)"
+                              : "none",
+                        }}
+                      />
+                    ))}
+                  </div>
+                </Draggable>
+              )}
             </div>
           ) : (
             <input type="file" onChange={handleVideoUpload} />
@@ -282,77 +309,78 @@ const VideoEditor = () => {
             </select>
           </div>
           <div className="crop-controls">
-            <label htmlFor="aspect-ratio-select">Aspect Ratio: </label>
+            <label htmlFor="aspect-ratio-select">Cropper Aspect Ratio: </label>
             <select
               id="aspect-ratio-select"
               value={aspectRatio}
               onChange={handleAspectRatioChange}
             >
-              <option value="16:9">16:9</option>
+              <option value="9:18">9:18</option>
               <option value="9:16">9:16</option>
               <option value="4:3">4:3</option>
+              <option value="3:4">3:4</option>
               <option value="1:1">1:1</option>
+              <option value="4:5">4:5</option>
             </select>
           </div>
         </div>
-        {loaded ? (
-          <button onClick={preview}>Preview</button>
-        ) : (
-          <button onClick={preview} disabled>
-            Preview
-          </button>
-        )}
       </section>
       <section className="main-right">
         <div id="pre-head">Preview</div>
         <div id="pre-body">
-          <div
-            style={{
-              position: "relative",
-              width: "500px",
-              aspectRatio: "16/9",
-              // transform: `translateX(${prePos}px)`,
-            }}
-          >
+          {isCropping ? (
             <div
               style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                height: "100%",
-                width: leftWidth,
-                backgroundColor: "#37393f",
+                position: "relative",
+                width: "800px",
+                aspectRatio: "16/9",
+                zIndex: -500,
+                transform: `translateX(${prePos}px)`,
+                top: "-100px",
               }}
-            ></div>
-            <ReactPlayer
-              ref={preVideoRef}
-              url={video}
-              playing={playing}
-              controls={false}
-              volume={volume}
-              width="100%"
-              height="100%"
-              playbackRate={speed}
-              onProgress={handleProgress}
-              onDuration={handleDuration}
-            />
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                right: 0,
-                height: "100%",
-                width: rightWidth,
-                backgroundColor: "#37393f",
-              }}
-            ></div>
-          </div>
-          <p id="pre-message">Preview not available</p>
-          <p>
-            Please click on "Start Cropper"
-            <br />
-            and then play video
-          </p>
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: "-0.7px",
+                  height: "100%",
+                  width: leftWidth,
+                  backgroundColor: "#37393f",
+                }}
+              ></div>
+              <ReactPlayer
+                ref={preVideoRef}
+                url={video}
+                playing={playing}
+                controls={false}
+                width="100%"
+                height="100%"
+                playbackRate={speed}
+                volume={0}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  right: "-0.7px",
+                  height: "100%",
+                  width: rightWidth,
+                  backgroundColor: "#37393f",
+                }}
+              ></div>
+            </div>
+          ) : (
+            <>
+              <FaYoutube id="vid-icon" />
+              <p id="pre-message">Preview not available</p>
+              <p>
+                Please click on "Start Cropper"
+                <br />
+                and then play video
+              </p>
+            </>
+          )}
         </div>
       </section>
     </main>
